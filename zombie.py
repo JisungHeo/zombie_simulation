@@ -25,12 +25,7 @@ __author__='''
 print __author__
 # ============ CONFIGURATIONS =====================
 NUMBER_OF_CITIES = 6
-POPULATION = [9668,1030,1009,1001,1193,843]
-HUMAN = [9668,1030,1009,1001,1193,843]
-WOUNDED = [0,0,0,0,0,0]
-ZOMBIE = [0,0,0,0,0,0] 
-DEAD = [0,0,0,0,0,0]
-SOLDIER = [0,0,0,0,0,0]
+
 
 UNIVERS_COLOR = "black"
 TRANSPARENCY_LEVEL = 1
@@ -44,6 +39,7 @@ import Tkinter
 import time
 import random
 import math
+import project
 
 # Canvas class
 class Sky(Tkinter.Canvas):
@@ -103,9 +99,9 @@ class City:
   index = self.index
   x1 = self.index
   y1 = self.index
-  
+
   #Cacluate postiion
-  radius = math.sqrt(POPULATION[index])*4
+  radius = math.sqrt(project.POPULATION[index])*4
   x1 = self.x1 - radius/2
   y1 = self.y1 - radius/2
   x2,y2=x1+radius, y1+radius
@@ -115,19 +111,19 @@ class City:
 #Calculate proprtion of human, wounded, zombie, dead in City
  def caculate_proportion(self):
   index = self.index
-  POPULATION[index] = HUMAN[index]+WOUNDED[index]+ZOMBIE[index]+DEAD[index]
-  allP=POPULATION[index]
-  hp = 360.0 * HUMAN[index]/allP
-  wp = 360.0 * WOUNDED[index]/allP
-  zp = 360.0 * ZOMBIE[index]/allP
-  dp = 360.0 * DEAD[index]/allP
-  sp = 360.0 * SOLDIER[index]/allP
+  project.POPULATION[index] = project.HUMAN[index]+project.WOUNDED[index]+project.ZOMBIE[index]+project.DEAD[index]
+  allP=project.POPULATION[index]
+  hp = 360.0 * project.HUMAN[index]/allP
+  wp = 360.0 * project.WOUNDED[index]/allP
+  zp = 360.0 * project.ZOMBIE[index]/allP
+  dp = 360.0 * project.DEAD[index]/allP
+  sp = 360.0 * project.SOLDIER[index]/allP
   return (hp,wp,zp,dp,sp)
-  
+
 #Draw City
  def draw_city(self):
   parent = self.parent
-  
+
   #Cacluate postiion
   position = self.calculate_position()
   #Calculate percentage
@@ -154,7 +150,7 @@ def main():
  root.wait_visibility(screen)
  root.wm_attributes('-fullscreen', True)
  root.overrideredirect(1)
- 
+
  # Windows Destroy Function
  def out(event):
   root.destroy()
@@ -165,10 +161,18 @@ def main():
   root.bind_all(seq, out)
 
  while True:
+  #POPULATION = project.POPULATION
+  #HUMAN = project.HUMAN
+  #WOUNDED = project.WOUNDED
+  #ZOMBIE = project.ZOMBIE
+  #DEAD = project.DEAD
+  #SOLDIER = project.SOLDIER
+
   root.update()
   root.update_idletasks()
   screen.update_screen()
 
 # main trigger function
 if __name__ == '__main__':
+# project.main()
  main()
