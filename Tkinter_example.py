@@ -116,12 +116,12 @@ def main():
 
  # Tkinter Window Configurations
  root.wait_visibility(screen)
- root.wm_attributes('-alpha',TRANSPARENCY_LEVEL)
- root.wm_attributes("-topmost", True)
+ #root.wm_attributes('-alpha',TRANSPARENCY_LEVEL)
+ #root.wm_attributes("-topmost", True)
+ root.wm_attributes('-fullscreen', True)
  root.overrideredirect(1)
-# root.attributes('-fullscreen', True)
+ 
     # Window Exit Functions
-
     # Windows Destroy Function
  def out(event):
   root.destroy()
