@@ -7,15 +7,15 @@ import Tkinter
 import time
 import math
 
+#Global variable
 NUMBER_OF_CITIES = 6
-
-
-UNIVERS_COLOR = "black"
+UNIVERS_COLOR = "white"
 TRANSPARENCY_LEVEL = 1
 SCREEN_SAVER_CLOSING_EVENTS = ['<Any-KeyPress>', '<Any-Button>']
+DAY = 0
 
 num_zombie_threshold = 147
-num_soldiers = 176
+num_soldiers = 176 
 power_zombie = 15
 power_human = 15
 power_wounded = 5
@@ -29,6 +29,10 @@ WOUNDED = [0,0,0,0,0,0]
 ZOMBIE = [0,0,0,0,0,0]
 DEAD = [0,0,0,0,0,0]
 SOLDIER = [0,0,0,0,0,0]
+
+#
+#
+#Entity 
 class Zombie:
     def __init__(self, sim):
         self.HP = 1000
@@ -139,8 +143,9 @@ class Soldier:
     def update(self):
         self.fight()
         self.move()
-
-
+#
+#
+##Main
 class Simulation():
     def __init__(self, env):
         self.env = env
@@ -226,8 +231,9 @@ class Simulation():
 
     def run(self):
         while(True):
-            print self.env.now, 'day'
-
+            global DAY
+            DAY = self.env.now
+            print DAY, 'day'
             zombies = {}
             humans = {}
             woundeds = {}
@@ -260,25 +266,6 @@ class Simulation():
                     soldiers[i][j].zombie = zombies[i][j]
                     zombies[i][j].human = soldiers[i][j]
 
-
-            #for i in range(6):
-            #    if len(zombies[i]) > 0:
-            #        fighters = random.sample(humans[i], int(len(humans[i])*0.1))
-            #        non_fighters = list(set(humans[i]) - set(fighters))
-            #        for fighter in fighters:
-            #            fighter.fightable = True
-            #            if np.random.uniform(0,1)<0.3:
-            #                self.humans.remove(fighter)
-            #                zombie = Zombie(self)
-            #                zombie.city = i
-            #                self.zombies.append(zombie)
-            #        for non_fighter in non_fighters:
-            #            non_fighter.fightable = False
-            #            if np.random.uniform(0,1)<0.05:
-            #                self.humans.remove(non_fighter)
-            #                zombie = Zombie(self)
-            #                zombie.city = i
-            #                self.zombies.append(zombie)
             global HUMAN
             global WOUNDED
             global ZOMBIE
@@ -313,17 +300,43 @@ class Sky(Tkinter.Canvas):
   self.cities=[]
   self.create_cities()
 
-  # Function For Creating Stars
+  # Function For Creating City
  def create_cities(self):
   for i in range(NUMBER_OF_CITIES):
    self.cities.append(City(self, i))
   return
-
-  # Function For Updating Stars Coordinates
+ #Function for information
+ def write_information(self):
+     parent = self
+     #DAY
+     parent.create_text(30 , 20 , font="Purisa", text= 'DAY : ')
+     parent.create_text(60 , 20 , font="Purisa", text= DAY)
+     #Infection Rate
+     infection_rate = (100.0* sum(ZOMBIE))/sum(POPULATION)
+     infection_rate = round(infection_rate,2)
+     parent.create_text(60 , 50 , font="Purisa", text= 'Infection Rate : ')
+     parent.create_text(140 , 50 , font="Purisa", text= infection_rate)
+     parent.create_text(170 , 50 , font="Purisa", text= '%')
+     
+     #Legend
+     parent.create_text(40 , 100 , font="Purisa", text= 'Human')
+     parent.create_line(80, 100, 120, 100, fill="#FAF402", width=8)
+     parent.create_text(40 , 130 , font="Purisa", text= 'Wounded')
+     parent.create_line(80, 130, 120, 130, fill="#00AC36", width=8)
+     parent.create_text(40 , 160 , font="Purisa", text= 'Zombie')
+     parent.create_line(80, 160, 120, 160, fill="#7A0871", width=8)
+     parent.create_text(40 , 190 , font="Purisa", text= 'Dead')
+     parent.create_line(80, 190, 120, 190, fill="#E00022", width=8)
+     parent.create_text(40 , 220 , font="Purisa", text= 'Soldier')
+     parent.create_line(80, 220, 120, 220, fill="#9CF0C9", width=8)
+     
+ # Function For Updating City Shape
  def update_screen(self):
      self.delete("all")
+     self.write_information()
      for i in self.cities:
          i.draw_city()
+         i.write_dead_num()
      return
 #
 #City Class Object
@@ -364,6 +377,7 @@ class City:
   index = self.index
   x1 = self.index
   y1 = self.index
+  parent = self.parent
 
   #Cacluate postiion
   radius = math.sqrt(POPULATION[index])*4
@@ -376,8 +390,9 @@ class City:
 #Calculate proprtion of human, wounded, zombie, dead in City
  def caculate_proportion(self):
   index = self.index
-  POPULATION[index] = HUMAN[index]+WOUNDED[index]+ZOMBIE[index]+DEAD[index]
+  POPULATION[index] = HUMAN[index]+WOUNDED[index]+ZOMBIE[index]+DEAD[index]+SOLDIER[index]
   allP=POPULATION[index]
+  if(allP == 0): return (0,0,0,0,0)
   hp = math.floor(360.0 * HUMAN[index]/allP)
   wp = math.floor(360.0 * WOUNDED[index]/allP)
   zp = math.floor(360.0 * ZOMBIE[index]/allP)
@@ -393,16 +408,25 @@ class City:
   position = self.calculate_position()
   #Calculate percentage
   (hp,wp,zp,dp,sp) = self.caculate_proportion()
+  #draw arc
   if(hp==360): hp = 359.999
   parent.create_arc(position, fill="#FAF402", outline="#FAF402", start=0, extent = hp)
   parent.create_arc(position, fill="#00AC36", outline="#00AC36", start=hp, extent = wp)
   parent.create_arc(position, fill="#7A0871", outline="#7A0871", start=hp+wp, extent = zp)
   parent.create_arc(position, fill="#E00022", outline="#E00022", start=hp+wp+zp, extent = dp)
   parent.create_arc(position, fill="#9CF0C9", outline="#9CF0C9", start=hp+wp+zp+dp, extent = sp)
-  #lbl = Label(parent.canvas, text=hp)
-  #lbl.pack()
   return
+#Write Letter
+ def write_dead_num(self):
+     index = self.index
+     parent = self.parent
+     (x1,y1,x2,y2) = self.calculate_position()
+     POPULATION[index]
+     parent.create_text(x2 , y1 , font="Purisa", text=DEAD[index])
+     parent.create_text(x1 , y2 , font="Purisa", text=DEAD[index])
 
+ 
+     
 # create window object
 root=Tkinter.Tk()
 # create canvas
