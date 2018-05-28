@@ -15,7 +15,7 @@ SCREEN_SAVER_CLOSING_EVENTS = ['<Any-KeyPress>', '<Any-Button>']
 DAY = 0
 
 num_zombie_threshold = 147
-num_soldiers = 176 
+num_soldiers = 176
 power_zombie = 15
 power_human = 15
 power_wounded = 5
@@ -32,7 +32,7 @@ SOLDIER = [0,0,0,0,0,0]
 
 #
 #
-#Entity 
+#Entity
 class Zombie:
     def __init__(self, sim):
         self.HP = 1000
@@ -223,6 +223,13 @@ class Simulation():
                 wounded.city = soldier.city
                 self.soldiers.remove(soldier)
                 self.woundeds.append(wounded)
+        for i in range(6):
+            num_dead_zombies = len([zombie for zombie in self.zombies if zombie.city == i and zombie.HP <= 0])
+            num_dead_humans = len([human for human in self.humans if human.city == i and human.HP <= 0])
+            num_dead_woundeds = len([wounded for wounded in self.woundeds if wounded.city == i and wounded.HP <= 0])
+            num_dead_soldiers = len([soldier for soldier in self.soldiers if soldier.city == i and soldier.HP <= 0])
+            total_deads = num_dead_zombies + num_dead_humans + num_dead_woundeds + num_dead_soldiers
+            DEAD[i] += total_deads
         self.zombies = [zombie for zombie in self.zombies if zombie.HP > 0]
         self.humans = [human for human in self.humans if human.HP > 0]
         self.woundeds = [wounded for wounded in self.woundeds if wounded.HP > 0]
@@ -274,6 +281,10 @@ class Simulation():
             WOUNDED = self.num_woundeds.values()
             ZOMBIE = self.num_zombies.values()
             SOLDIER = self.num_soldiers.values()
+            print 'human:', sum(HUMAN)
+            print 'wounded:', sum(WOUNDED)
+            print 'zombie:', sum(ZOMBIE)
+            print 'soldier:', sum(SOLDIER)
 
             root.update()
             root.update_idletasks()
@@ -290,7 +301,7 @@ class Simulation():
             elif len(self.humans) == 0:
                 print 'humans have been defeated at ', self.env.now
                 exit()
-            yield self.env.timeout(10)
+            yield self.env.timeout(1)
 
 # Canvas class
 class Sky(Tkinter.Canvas):
@@ -317,7 +328,7 @@ class Sky(Tkinter.Canvas):
      parent.create_text(60 , 50 , font="Purisa", text= 'Infection Rate : ')
      parent.create_text(140 , 50 , font="Purisa", text= infection_rate)
      parent.create_text(170 , 50 , font="Purisa", text= '%')
-     
+
      #Legend
      parent.create_text(40 , 100 , font="Purisa", text= 'Human')
      parent.create_line(80, 100, 120, 100, fill="#FAF402", width=8)
@@ -329,7 +340,7 @@ class Sky(Tkinter.Canvas):
      parent.create_line(80, 190, 120, 190, fill="#E00022", width=8)
      parent.create_text(40 , 220 , font="Purisa", text= 'Soldier')
      parent.create_line(80, 220, 120, 220, fill="#9CF0C9", width=8)
-     
+
  # Function For Updating City Shape
  def update_screen(self):
      self.delete("all")
@@ -393,11 +404,12 @@ class City:
   POPULATION[index] = HUMAN[index]+WOUNDED[index]+ZOMBIE[index]+DEAD[index]+SOLDIER[index]
   allP=POPULATION[index]
   if(allP == 0): return (0,0,0,0,0)
-  hp = math.floor(360.0 * HUMAN[index]/allP)
-  wp = math.floor(360.0 * WOUNDED[index]/allP)
-  zp = math.floor(360.0 * ZOMBIE[index]/allP)
-  dp = math.floor(360.0 * DEAD[index]/allP)
-  sp = math.floor(360.0 * SOLDIER[index]/allP)
+  epsilon = 0.01
+  hp = math.floor(360.0 * HUMAN[index]/(allP+epsilon))
+  wp = math.floor(360.0 * WOUNDED[index]/(allP+epsilon))
+  zp = math.floor(360.0 * ZOMBIE[index]/(allP+epsilon))
+  dp = math.floor(360.0 * DEAD[index]/(allP+epsilon))
+  sp = math.floor(360.0 * SOLDIER[index]/(allP+epsilon))
   return (hp,wp,zp,dp,sp)
 
 #Draw City
@@ -425,8 +437,8 @@ class City:
      parent.create_text(x2 , y1 , font="Purisa", text=DEAD[index])
      parent.create_text(x1 , y2 , font="Purisa", text=DEAD[index])
 
- 
-     
+
+
 # create window object
 root=Tkinter.Tk()
 # create canvas
