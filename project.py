@@ -18,10 +18,10 @@ num_zombie_threshold = 147
 num_soldiers = 176
 power_zombie = 15
 power_human = 15
-power_wounded = 5
+power_wounded = 0
 power_soldier = 500
 adjacent_cities = {0:[0,1,2,3,4,5],1:[0,1,2,5],2:[0,1,2,3],3:[0,2,3,4],4:[0,3,4,5],5:[0,1,4,5]}
-army_strategy = 0
+army_strategy = 1
 
 POPULATION = [9668,1030,1009,1001,1193,843]
 HUMAN = [9668,1030,1009,1001,1193,843]
@@ -29,6 +29,15 @@ WOUNDED = [0,0,0,0,0,0]
 ZOMBIE = [0,0,0,0,0,0]
 DEAD = [0,0,0,0,0,0]
 SOLDIER = [0,0,0,0,0,0]
+
+STATISTIC_SUVIVOR = [0,0,0,0,0,0]
+STATISTIC_WOUNDED = [0,0,0,0,0,0]
+STATISTIC_DEAD = [0,0,0,0,0,0]
+ZOMBIE_DEFEATED = 0
+HUMAN_DEFEATED = 0
+
+animation = True
+num_replications = 100
 
 #
 #
@@ -157,7 +166,7 @@ class Simulation():
         num_humans = [9668, 1030, 1009, 1001, 1193, 843]
         num_woundeds = [0,0,0,0,0,0]
         num_soldiers = [0,0,0,0,0,0] #[31,29,29,29,29,29]
-        print 'simulation started'
+        #print 'simulation started'
         self.zombies = []
         self.humans = []
         self.woundeds = []
@@ -182,7 +191,7 @@ class Simulation():
                 self.soldiers.append(soldier)
 
     def activate_army(self):
-        num_soldiers = [31,29,29,29,29,29]
+        num_soldiers = [116,12,12,12,14,10]
         for i in range(6):
             for _ in range(num_soldiers[i]):
                 soldier = Soldier(self)
@@ -240,7 +249,7 @@ class Simulation():
         while(True):
             global DAY
             DAY = self.env.now
-            print DAY, 'day'
+            #print DAY, 'day'
             zombies = {}
             humans = {}
             woundeds = {}
@@ -260,7 +269,7 @@ class Simulation():
                 self.num_humans[i] = len(humans[i])
                 self.num_woundeds[i] = len(woundeds[i])
                 self.num_soldiers[i] = len(soldiers[i])
-                print 'zombies in ', i, ': ', len(zombies[i])
+                #print 'zombies in ', i, ': ', len(zombies[i])
 
             for i in range(6):
                 for j in range(min(len(zombies[i]), len(humans[i]))):
@@ -281,26 +290,30 @@ class Simulation():
             WOUNDED = self.num_woundeds.values()
             ZOMBIE = self.num_zombies.values()
             SOLDIER = self.num_soldiers.values()
-            print 'human:', sum(HUMAN)
-            print 'wounded:', sum(WOUNDED)
-            print 'zombie:', sum(ZOMBIE)
-            print 'soldier:', sum(SOLDIER)
+            #print 'Survivor:',[HUMAN[i] for i in range(6)]
+            #print 'Wounded:', WOUNDED
+            #print 'Deads:', DEAD
 
-            root.update()
-            root.update_idletasks()
-            screen.update_screen()
+            if animation==True:
+                root.update()
+                root.update_idletasks()
+                screen.update_screen()
 
             self.update()
             if self.activated == False and len(self.zombies) >= num_zombie_threshold:
                 self.activate_army()
                 self.activated = True
-                print 'army activated'
+                #print 'army activated'
             if len(self.zombies) == 0:
                 print 'zombies have been defeated at ', self.env.now
-                exit()
+                global ZOMBIE_DEFEATED
+                ZOMBIE_DEFEATED += 1
+                break
             elif len(self.humans) == 0:
                 print 'humans have been defeated at ', self.env.now
-                exit()
+                global HUMAN_DEFEATED
+                HUMAN_DEFEATED += 1
+                break
             yield self.env.timeout(1)
 
 # Canvas class
@@ -438,28 +451,38 @@ class City:
      parent.create_text(x1 , y2 , font="Purisa", text=DEAD[index])
 
 
+if animation==True:
+    # create window object
+    root=Tkinter.Tk()
+    # create canvas
+    screen = Sky(root,bg=UNIVERS_COLOR)
+    screen.pack(expand="yes",fill="both")
 
-# create window object
-root=Tkinter.Tk()
-# create canvas
-screen = Sky(root,bg=UNIVERS_COLOR)
-screen.pack(expand="yes",fill="both")
+    # Tkinter Window Configurations
+    root.wait_visibility(screen)
+    root.wm_attributes('-fullscreen', True)
+    root.overrideredirect(1)
 
-# Tkinter Window Configurations
-root.wait_visibility(screen)
-root.wm_attributes('-fullscreen', True)
-root.overrideredirect(1)
+    # Windows Destroy Function
+    def out(event):
+     root.destroy()
+     return
 
-# Windows Destroy Function
-def out(event):
- root.destroy()
- return
+    # Event Bindings
+    for seq in SCREEN_SAVER_CLOSING_EVENTS:
+     root.bind_all(seq, out)
 
-# Event Bindings
-for seq in SCREEN_SAVER_CLOSING_EVENTS:
- root.bind_all(seq, out)
-
-print 'slkdfjldsjflskdjfdsdfj'
-env = simpy.Environment()
-simulation = Simulation(env)
-env.run(until=1000)
+#print 'slkdfjldsjflskdjfdsdfj'
+for i in range(num_replications):
+    env = simpy.Environment()
+    simulation = Simulation(env)
+    env.run(until=100)
+    STATISTIC_SUVIVOR = [HUMAN[j]+STATISTIC_SUVIVOR[j] for j in range(6)]
+    STATISTIC_WOUNDED = [WOUNDED[j]+STATISTIC_WOUNDED[j] for j in range(6)]
+    STATISTIC_DEAD = [DEAD[j]+STATISTIC_DEAD[j] for j in range(6)]
+    print 'Replication ', i
+    print 'STATISTIC_SURVIOVR:',STATISTIC_SUVIVOR
+    print 'STATISTIC_WOUNDED:', STATISTIC_WOUNDED
+    print 'STATISTIC_DEAD:',STATISTIC_DEAD
+    print 'ZOMBIE_DEFEATED:', ZOMBIE_DEFEATED
+    print 'HUMAN_DEFEATED:', HUMAN_DEFEATED
