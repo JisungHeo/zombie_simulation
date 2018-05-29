@@ -36,7 +36,7 @@ STATISTIC_DEAD = [0,0,0,0,0,0]
 ZOMBIE_DEFEATED = 0
 HUMAN_DEFEATED = 0
 
-animation = True
+animation = False
 num_replications = 100
 
 #
@@ -189,6 +189,9 @@ class Simulation():
                 soldier = Soldier(self)
                 soldier.city = i
                 self.soldiers.append(soldier)
+
+        global DEAD
+        DEAD = [0,0,0,0,0,0]
 
     def activate_army(self):
         num_soldiers = [116,12,12,12,14,10]
