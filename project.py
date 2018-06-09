@@ -21,7 +21,8 @@ power_human = 15
 power_wounded = 0
 power_soldier = 500
 adjacent_cities = {0:[0,1,2,3,4,5],1:[0,1,2,5],2:[0,1,2,3],3:[0,2,3,4],4:[0,3,4,5],5:[0,1,4,5]}
-army_strategy = 1
+army_strategy = 0 #0: move/regular, 1: move/zombie, 2: static/proportional, 3: static/even
+initial_soldiers = {0:[176,0,0,0,0,0],1:[176,0,0,0,0,0],2:[115, 13, 12, 12, 14, 10],3:[31,29,29,29,29,29]}
 
 POPULATION = [9668,1030,1009,1001,1193,843]
 HUMAN = [9668,1030,1009,1001,1193,843]
@@ -37,7 +38,7 @@ ZOMBIE_DEFEATED = 0
 HUMAN_DEFEATED = 0
 
 animation = False
-num_replications = 100
+num_replications = 3
 
 #
 #
@@ -109,7 +110,7 @@ class Wounded:
         self.HP = 50
         self.fightable = False
         self.sim = sim
-        self.power = abs(np.random.normal(power_wounded,5))
+        self.power = power_wounded#abs(np.random.normal(power_wounded,5))
         self.zombie = None
         self.infected = False
 
@@ -144,14 +145,26 @@ class Soldier:
 
     def move(self):
         if army_strategy == 0:
-            self.city = random.choice(adjacent_cities[self.city])
+            self.city = (self.city + 1) % 6
         elif army_strategy == 1:
+            zombie_proportion = {}
+            for i in adjacent_cities[self.city]:
+                num_zombies = self.sim.num_zombies[i] #len([z for z in self.sim.zombies if z.city == i])
+                num_humans = self.sim.num_humans[i] #len([h for h in self.sim.humans if h.city == i])
+                num_woundeds = self.sim.num_woundeds[i] #len([w for w in self.sim.woundeds if w.city == i])
+                num_soldiers = self.sim.num_soldiers[i] #len([s for s in self.sim.soldiers if s.city == i])
+                zombie_proportion[i]=(float(num_zombies)/(num_humans+num_woundeds+num_soldiers+1))
+            max_prop = max(zombie_proportion.values())
+            city = random.choice([key for key in zombie_proportion.keys() if zombie_proportion[key]==max_prop])
+            self.city = city #random.choice(adjacent_cities[self.city]
+        elif army_strategy == 2:
+            self.city = self.city
+        elif army_strategy == 3:
             self.city = self.city
 
-
     def update(self):
-        self.fight()
         self.move()
+        self.fight()
 #
 #
 ##Main
@@ -161,6 +174,7 @@ class Simulation():
         self.env.process(self.run())
 
         self.activated = False
+        self.soldier_next_city = 1
 
         num_zombie = [1,0,0,0,0,0] # Seoul, Goyang, Yongin Sungnam Bucheon Suwon Bucheon
         num_humans = [9668, 1030, 1009, 1001, 1193, 843]
@@ -194,7 +208,7 @@ class Simulation():
         DEAD = [0,0,0,0,0,0]
 
     def activate_army(self):
-        num_soldiers = [116,12,12,12,14,10]
+        num_soldiers = initial_soldiers[army_strategy]
         for i in range(6):
             for _ in range(num_soldiers[i]):
                 soldier = Soldier(self)
@@ -223,9 +237,15 @@ class Simulation():
                 zombie.city = wounded.city
                 self.woundeds.remove(wounded)
                 self.zombies.append(zombie)
+
+
+
+        #print 'before calculate : ', len(self.soldiers)
+        infection = 0;
         for soldier in self.soldiers:
             soldier.update()
-            if soldier.infected:
+            if soldier.infected == True:
+                infection = infection + 1;
                 zombie = Zombie(self)
                 zombie.city = soldier.city
                 self.soldiers.remove(soldier)
@@ -235,6 +255,12 @@ class Simulation():
                 wounded.city = soldier.city
                 self.soldiers.remove(soldier)
                 self.woundeds.append(wounded)
+        #print 'after calculate : ', len(self.soldiers)
+        #print 'infection : ', infection
+        #for i in range(6):
+        #    print 'soldiers in %d:'%i,len([s for s in self.soldiers if (s.city == i and s.infected==True)])
+        #    print 'soldiers in %d:'%i,len([s for s in self.soldiers if (s.city == i and s.infected==False)])
+
         for i in range(6):
             num_dead_zombies = len([zombie for zombie in self.zombies if zombie.city == i and zombie.HP <= 0])
             num_dead_humans = len([human for human in self.humans if human.city == i and human.HP <= 0])
@@ -246,7 +272,12 @@ class Simulation():
         self.humans = [human for human in self.humans if human.HP > 0]
         self.woundeds = [wounded for wounded in self.woundeds if wounded.HP > 0]
         self.soldiers = [soldier for soldier in self.soldiers if soldier.HP > 0]
-
+        #print 'total soldiers 1 : ', len(self.soldiers)-num_dead_soldiers
+        #for i in range(6):
+        #    print 'soldiers in %d:'%i,len([s for s in self.soldiers if (s.city == i and s.infected==False)])
+        self.soldier_next_city = (self.soldier_next_city+1) % 6
+        #print 'city:', self.soldier_next_city
+        #print 'total soldiers:',len(self.soldiers)
 
     def run(self):
         while(True):
@@ -257,6 +288,9 @@ class Simulation():
             humans = {}
             woundeds = {}
             soldiers = {}
+
+            global soldier_city
+            soldier_city = 1;
 
             self.num_zombies = {}
             self.num_humans = {}
@@ -272,7 +306,7 @@ class Simulation():
                 self.num_humans[i] = len(humans[i])
                 self.num_woundeds[i] = len(woundeds[i])
                 self.num_soldiers[i] = len(soldiers[i])
-                #print 'zombies in ', i, ': ', len(zombies[i])
+                #print 'soldiers in ', i, ': ', len(soldiers[i])
 
             for i in range(6):
                 for j in range(min(len(zombies[i]), len(humans[i]))):
@@ -479,7 +513,7 @@ if animation==True:
 for i in range(num_replications):
     env = simpy.Environment()
     simulation = Simulation(env)
-    env.run(until=100)
+    env.run(until=1000)
     STATISTIC_SUVIVOR = [HUMAN[j]+STATISTIC_SUVIVOR[j] for j in range(6)]
     STATISTIC_WOUNDED = [WOUNDED[j]+STATISTIC_WOUNDED[j] for j in range(6)]
     STATISTIC_DEAD = [DEAD[j]+STATISTIC_DEAD[j] for j in range(6)]
