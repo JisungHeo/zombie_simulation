@@ -1,3 +1,4 @@
+import argparse
 import simpy
 import numpy as np
 import random
@@ -6,6 +7,12 @@ import random
 import Tkinter
 import time
 import math
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--strategy', type=int, default=0)
+    parser.add_argument('--num_replication', type=int, default=30)
+    config = parser.parse_args()
 
 #Global variable
 NUMBER_OF_CITIES = 6
@@ -21,7 +28,7 @@ power_human = 15
 power_wounded = 0
 power_soldier = 500
 adjacent_cities = {0:[0,1,2,3,4,5],1:[0,1,2,5],2:[0,1,2,3],3:[0,2,3,4],4:[0,3,4,5],5:[0,1,4,5]}
-army_strategy = 0 #0: move/regular, 1: move/zombie, 2: static/proportional, 3: static/even
+army_strategy = config.strategy #0: move/regular, 1: move/zombie, 2: static/proportional, 3: static/even
 initial_soldiers = {0:[176,0,0,0,0,0],1:[176,0,0,0,0,0],2:[115, 13, 12, 12, 14, 10],3:[31,29,29,29,29,29]}
 
 POPULATION = [9668,1030,1009,1001,1193,843]
@@ -38,7 +45,7 @@ ZOMBIE_DEFEATED = 0
 HUMAN_DEFEATED = 0
 
 animation = False
-num_replications = 3
+num_replications = config.num_replication
 
 #
 #
